@@ -1,0 +1,149 @@
+<?php
+require_once 'config/database.php';
+require_once 'config/email.php';
+
+header('Content-Type: application/json');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Método não permitido']);
+    exit();
+}
+
+try {
+    // Validar dados
+    $required_fields = [
+        'espaco_id', 'nome_solicitante', 'posto_graduacao', 'setor', 'ramal',
+        'nome_evento', 'categoria_evento', 'quantidade_participantes',
+        'data_inicio', 'data_fim'
+    ];
+
+    foreach ($required_fields as $field) {
+        if (!isset($_POST[$field]) || empty($_POST[$field])) {
+            throw new Exception("Campo obrigatório não preenchido: {$field}");
+        }
+    }
+
+    // Buscar configurações
+    $stmt = $conn->query("SELECT * FROM configuracoes LIMIT 1");
+    $config = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Validar antecedência
+    $data_inicio = new DateTime($_POST['data_inicio']);
+    $agora = new DateTime();
+    $diferenca = $agora->diff($data_inicio);
+    
+    if ($diferenca->h < $config['antecedencia_horas']) {
+        throw new Exception("O agendamento deve ser feito com pelo menos {$config['antecedencia_horas']} horas de antecedência");
+    }
+
+    // Validar duração máxima
+    $data_fim = new DateTime($_POST['data_fim']);
+    $duracao = $data_inicio->diff($data_fim);
+    
+    if ($duracao->h > $config['max_horas_consecutivas']) {
+        throw new Exception("A duração máxima permitida é de {$config['max_horas_consecutivas']} horas");
+    }
+
+    // Verificar conflitos
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) FROM agendamentos 
+        WHERE espaco_id = ? 
+        AND status != 'cancelado'
+        AND (
+            (data_inicio BETWEEN ? AND ?) OR
+            (data_fim BETWEEN ? AND ?) OR
+            (? BETWEEN data_inicio AND data_fim)
+        )
+    ");
+    
+    $stmt->execute([
+        $_POST['espaco_id'],
+        $_POST['data_inicio'],
+        $_POST['data_fim'],
+        $_POST['data_inicio'],
+        $_POST['data_fim'],
+        $_POST['data_inicio']
+    ]);
+    
+    if ($stmt->fetchColumn() > 0) {
+        throw new Exception("Já existe um agendamento para este horário");
+    }
+
+    // Inserir agendamento
+    $stmt = $conn->prepare("
+        INSERT INTO agendamentos (
+            espaco_id, nome_solicitante, posto_graduacao, setor, ramal,
+            nome_evento, categoria_evento, quantidade_participantes,
+            apoio_rancho, apoio_ti, observacoes, data_inicio, data_fim
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+
+    $stmt->execute([
+        $_POST['espaco_id'],
+        $_POST['nome_solicitante'],
+        $_POST['posto_graduacao'],
+        $_POST['setor'],
+        $_POST['ramal'],
+        $_POST['nome_evento'],
+        $_POST['categoria_evento'],
+        $_POST['quantidade_participantes'],
+        isset($_POST['apoio_rancho']) ? 1 : 0,
+        isset($_POST['apoio_ti']) ? 1 : 0,
+	isset($_POST['observacoes']) ? $_POST['observacoes'] : null,
+	//$_POST['observacoes'] ?? null,
+        $_POST['data_inicio'],
+        $_POST['data_fim']
+    ]);
+
+	
+    // Buscar informações do espaço
+    $stmt = $conn->prepare("SELECT nome FROM espacos WHERE id = ?");
+    $stmt->execute([$_POST['espaco_id']]);
+    $espaco = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Enviar email
+    $mensagem = "
+        <h2>Novo Agendamento</h2>
+        <p><strong>Espaço:</strong> {$espaco['nome']}</p>
+        <p><strong>Evento:</strong> {$_POST['nome_evento']}</p>
+        <p><strong>Solicitante:</strong> {$_POST['posto_graduacao']} {$_POST['nome_solicitante']}</p>
+        <p><strong>Setor:</strong> {$_POST['setor']}</p>
+        <p><strong>Ramal:</strong> {$_POST['ramal']}</p>
+        <p><strong>Data Início:</strong> {$_POST['data_inicio']}</p>
+        <p><strong>Data Fim:</strong> {$_POST['data_fim']}</p>
+        <p><strong>Participantes:</strong> {$_POST['quantidade_participantes']}</p>
+        <p><strong>Apoio Rancho:</strong> " . (isset($_POST['apoio_rancho']) ? 'Sim' : 'Não') . "</p>
+        <p><strong>Apoio TI:</strong> " . (isset($_POST['apoio_ti']) ? 'Sim' : 'Não') . "</p>
+        <p><strong>Observações:</strong> {$_POST['observacoes']}</p>
+    ";
+
+    enviarEmail($config['email_comunicacao'], "Novo Agendamento - {$_POST['nome_evento']}", $mensagem);
+
+    // Enviar email para a comunicação social
+    $assunto = "Novo Agendamento - Sistema BANT";
+    $mensagem = "
+        <h2>Novo Agendamento Realizado</h2>
+        <p><strong>Evento:</strong> {$_POST['nome_evento']}</p>
+        <p><strong>Espaço:</strong> {$espaco['nome']}</p>
+        <p><strong>Data:</strong> " . date('d/m/Y', strtotime($_POST['data_inicio'])) . "</p>
+        <p><strong>Horário:</strong> " . date('H:i', strtotime($_POST['data_inicio'])) . " às " . date('H:i', strtotime($_POST['data_fim'])) . "</p>
+        <p><strong>Solicitante:</strong> {$_POST['posto_graduacao']} {$_POST['nome_solicitante']}</p>
+        <p><strong>Setor:</strong> {$_POST['setor']}</p>
+        <p><strong>Ramal:</strong> {$_POST['ramal']}</p>
+        <p><strong>Número de Participantes:</strong> {$_POST['quantidade_participantes']}</p>
+        <p><strong>Apoio Rancho:</strong> " . (isset($_POST['apoio_rancho']) ? "Sim" : "Não") . "</p>
+        <p><strong>Apoio TI:</strong> " . (isset($_POST['apoio_ti']) ? "Sim" : "Não") . "</p>
+        <p><strong>Observações:</strong> {$_POST['observacoes']}</p>
+        <p>Acesse o sistema para aprovar ou cancelar este agendamento.</p>
+    ";
+
+    // Enviar email para a comunicação social
+    enviarEmail('dex.vanoni@gmail.com', $assunto, $mensagem);
+
+    echo json_encode(['success' => true]);
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}
+?> 
