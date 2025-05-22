@@ -15,7 +15,7 @@ try {
     $required_fields = [
         'espaco_id', 'nome_solicitante', 'posto_graduacao', 'setor', 'ramal',
         'email_solicitante', 'nome_evento', 'categoria_evento', 'quantidade_participantes',
-        'data_inicio', 'data_fim'
+        'data_inicio', 'data_fim', 'observacoes'
     ];
 
     foreach ($required_fields as $field) {
@@ -137,12 +137,22 @@ try {
         <p><strong>Setor:</strong> {$_POST['setor']}</p>
         <p><strong>Ramal:</strong> {$_POST['ramal']}</p>
         <p><strong>Número de Participantes:</strong> {$_POST['quantidade_participantes']}</p>
-        <p><strong>Observações:</strong> " . (isset($_POST['observacoes']) ? $_POST['observacoes'] : "Nenhuma") . "</p>
+        <p><strong>Observações/Link:</strong> " . (isset($_POST['observacoes']) ? $_POST['observacoes'] : "Nenhuma") . "</p>
         <p>Acesse o sistema para aprovar ou cancelar este agendamento.</p>
     ";
 
     // Enviar email para a comunicação social
     enviarEmail($config['email_comunicacao'], $assunto, $mensagem);
+
+    // Enviar email adicional para a Sala de Videoconferência
+    if ($espaco['nome'] === 'Sala de Videoconferência') {
+        enviarEmail('etic.bant@fab.mil.br', $assunto, $mensagem);
+    }
+
+    // Enviar email adicional para o Auditório Cine Navy
+    if ($espaco['nome'] === 'Auditório Cine Navy') {
+        enviarEmail($config['email_sindico_cine_navy'], $assunto, $mensagem);
+    }
 
     // Enviar email de confirmação para o solicitante
     $assunto_solicitante = "Confirmação de Agendamento - Sistema BANT";

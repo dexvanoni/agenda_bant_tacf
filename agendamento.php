@@ -182,7 +182,7 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
                         <div class="mb-3">
                             <label class="form-label">Observações/Links de Reunião</label>
-                            <textarea class="form-control" name="observacoes" rows="3"></textarea>
+                            <textarea class="form-control" name="observacoes" rows="3" required></textarea>
                         </div>
                     </form>
                 </div>

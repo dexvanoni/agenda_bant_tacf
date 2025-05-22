@@ -115,7 +115,7 @@ try {
         <p><strong>Participantes:</strong> {$_POST['quantidade_participantes']}</p>
         <p><strong>Apoio Rancho:</strong> " . (isset($_POST['apoio_rancho']) ? 'Sim' : 'Não') . "</p>
         <p><strong>Apoio TI:</strong> " . (isset($_POST['apoio_ti']) ? 'Sim' : 'Não') . "</p>
-        <p><strong>Observações:</strong> {$_POST['observacoes']}</p>
+        <p><strong>Observações/Link:</strong> {$_POST['observacoes']}</p>
     ";
 
     enviarEmail($config['email_comunicacao'], "Novo Agendamento - {$_POST['nome_evento']}", $mensagem);
@@ -134,7 +134,7 @@ try {
         <p><strong>Número de Participantes:</strong> {$_POST['quantidade_participantes']}</p>
         <p><strong>Apoio Rancho:</strong> " . (isset($_POST['apoio_rancho']) ? "Sim" : "Não") . "</p>
         <p><strong>Apoio TI:</strong> " . (isset($_POST['apoio_ti']) ? "Sim" : "Não") . "</p>
-        <p><strong>Observações:</strong> {$_POST['observacoes']}</p>
+        <p><strong>Observações/Link:</strong> {$_POST['observacoes']}</p>
         <p>Acesse o sistema para aprovar ou cancelar este agendamento.</p>
     ";
 

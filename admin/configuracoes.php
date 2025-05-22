@@ -13,7 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         UPDATE configuracoes 
         SET antecedencia_horas = ?,
             max_horas_consecutivas = ?,
-            email_comunicacao = ?
+            email_comunicacao = ?,
+            email_sindico_cine_navy = ?
         WHERE id = ?
     ");
     
@@ -21,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['antecedencia_horas'],
         $_POST['max_horas_consecutivas'],
         $_POST['email_comunicacao'],
+        $_POST['email_sindico_cine_navy'],
         $_POST['id']
     ]);
     
@@ -106,6 +108,15 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                                value="<?php echo $config['email_comunicacao']; ?>" required>
                         <div class="form-text">
                             Email que receberá as notificações de novos agendamentos
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email do Síndico do Cine Navy</label>
+                        <input type="email" class="form-control" name="email_sindico_cine_navy" 
+                               value="<?php echo $config['email_sindico_cine_navy']; ?>" required>
+                        <div class="form-text">
+                            Email que receberá as notificações de agendamentos do Auditório Cine Navy
                         </div>
                     </div>
                     

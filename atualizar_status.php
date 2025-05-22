@@ -71,6 +71,19 @@ try {
     // Enviar email para o solicitante
     enviarEmail($agendamento['email_solicitante'], $assunto, $mensagem);
 
+    // Enviar email adicional para a Sala de Videoconferência
+    if ($agendamento['nome_espaco'] === 'Sala de Videoconferência') {
+        enviarEmail('etic.bant@fab.mil.br', $assunto, $mensagem);
+    }
+
+    // Enviar email adicional para o Auditório Cine Navy
+    if ($agendamento['nome_espaco'] === 'Auditório Cine Navy') {
+        // Buscar email do síndico
+        $stmt = $conn->query("SELECT email_sindico_cine_navy FROM configuracoes LIMIT 1");
+        $config = $stmt->fetch(PDO::FETCH_ASSOC);
+        enviarEmail($config['email_sindico_cine_navy'], $assunto, $mensagem);
+    }
+
     // Retornar sucesso
     echo json_encode([
         'success' => true,
