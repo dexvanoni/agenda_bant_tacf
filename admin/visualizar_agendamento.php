@@ -144,7 +144,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
                         <div class="row">
                             <div class="col-md-6">
                                 <p><strong>Evento:</strong> <?php echo htmlspecialchars($agendamento['nome_evento']); ?></p>
-                                <p><strong>Categoria:</strong> <?php echo htmlspecialchars($agendamento['categoria_evento']); ?></p>
                                 <p><strong>Espaço:</strong> <?php echo htmlspecialchars($agendamento['espaco_nome']); ?></p>
                                 <p><strong>Data Início:</strong> <?php echo date('d/m/Y H:i', strtotime($agendamento['data_inicio'])); ?></p>
                                 <p><strong>Data Fim:</strong> <?php echo date('d/m/Y H:i', strtotime($agendamento['data_fim'])); ?></p>
@@ -171,24 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
 
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Recursos Solicitados</h5>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p>
-                                    <strong>Apoio de Rancho:</strong>
-                                    <?php echo $agendamento['apoio_rancho'] ? 'Sim' : 'Não'; ?>
-                                </p>
-                            </div>
-                            <div class="col-md-6">
-                                <p>
-                                    <strong>Apoio de TI:</strong>
-                                    <?php echo $agendamento['apoio_ti'] ? 'Sim' : 'Não'; ?>
-                                </p>
-                            </div>
-                        </div>
+                        <h5 class="card-title">Observações/Links de Reunião:</h5>
                         <?php if ($agendamento['observacoes']): ?>
                         <div class="mt-3">
-                            <h6>Observações/Links de Reunião:</h6>
                             <p class="mb-0"><?php echo nl2br(htmlspecialchars($agendamento['observacoes'])); ?></p>
                         </div>
                         <?php endif; ?>

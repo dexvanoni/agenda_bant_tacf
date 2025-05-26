@@ -14,7 +14,7 @@ try {
     // Validar dados
     $required_fields = [
         'espaco_id', 'nome_solicitante', 'posto_graduacao', 'setor', 'ramal',
-        'email_solicitante', 'nome_evento', 'categoria_evento', 'quantidade_participantes',
+        'email_solicitante', 'nome_evento', 'quantidade_participantes',
         'data_inicio', 'data_fim', 'observacoes'
     ];
 
@@ -97,9 +97,9 @@ try {
     $stmt = $conn->prepare("
         INSERT INTO agendamentos (
             espaco_id, nome_solicitante, posto_graduacao, setor, ramal,
-            email_solicitante, nome_evento, categoria_evento, quantidade_participantes,
+            email_solicitante, nome_evento, quantidade_participantes,
             observacoes, data_inicio, data_fim
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->execute([
@@ -110,7 +110,6 @@ try {
         $_POST['ramal'],
         $_POST['email_solicitante'],
         $_POST['nome_evento'],
-        $_POST['categoria_evento'],
         $_POST['quantidade_participantes'],
         isset($_POST['observacoes']) ? $_POST['observacoes'] : null,
         $data_inicio_mysql,

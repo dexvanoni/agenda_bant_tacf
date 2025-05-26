@@ -108,18 +108,15 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                         <input type="hidden" id="espaco_id" name="espaco_id">
                         
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Data</label>
                                 <input type="date" class="form-control" id="data_agendamento" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Hora Início</label>
                                 <input type="time" class="form-control" id="hora_inicio" required>
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Duração (horas)</label>
                                 <select class="form-control" id="duracao" required>
                                     <?php 
@@ -133,13 +130,13 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                         </div>
 
                         <div class="row mb-3">
+                        <div class="col-md-6">
+                                <label class="form-label">Posto/Graduação</label>
+                                <input type="text" class="form-control" name="posto_graduacao" required>
+                            </div>
                             <div class="col-md-6">
                                 <label class="form-label">Nome do Solicitante</label>
                                 <input type="text" class="form-control" name="nome_solicitante" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Posto/Graduação</label>
-                                <input type="text" class="form-control" name="posto_graduacao" required>
                             </div>
                         </div>
 
@@ -167,13 +164,6 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                                 <label class="form-label">Nome do Evento</label>
                                 <input type="text" class="form-control" id="nome_evento" name="nome_evento" required>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Categoria do Evento</label>
-                                <input type="text" class="form-control" name="categoria_evento" required>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Quantidade de Participantes</label>
                                 <input type="number" class="form-control" name="quantidade_participantes" required>
