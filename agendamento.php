@@ -1,7 +1,7 @@
 <?php
 require_once 'config/database.php';
 
-if (!isset($_GET['espaco'])) {
+/*if (!isset($_GET['espaco'])) {
     header('Location: index.php');
     exit();
 }
@@ -15,7 +15,7 @@ if (!$espaco) {
     header('Location: index.php');
     exit();
 }
-
+*/
 // Buscar configurações
 $stmt = $conn->query("SELECT * FROM configuracoes LIMIT 1");
 $config = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -26,7 +26,7 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendamento - <?php echo htmlspecialchars($espaco['nome']); ?></title>
+    <title>Agendamento</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FullCalendar CSS -->
@@ -43,6 +43,9 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
             padding: 1rem 0;
             margin-bottom: 2rem;
         }
+        .campo-somente-leitura {
+            background-color:rgb(165, 165, 165) !important;
+        }
     </style>
 </head>
 <body>
@@ -51,8 +54,8 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h1>Agendamento</h1>
-                    <p class="mb-0"><?php echo htmlspecialchars($espaco['nome']); ?></p>
+                    <h1>Agendamento de Teste Físico da BANT</h1>
+                    <p class="mb-0">Realize seu agendamento de teste físico de forma rápida e fácil.</p>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="index.php" class="btn btn-light">Voltar</a>
@@ -64,25 +67,26 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
     <!-- Conteúdo Principal -->
     <main class="container">
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-7">
                 <div id="calendario"></div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Informações do Espaço</h5>
-                        <p class="card-text"><?php echo htmlspecialchars($espaco['descricao']); ?></p>
-                        <p class="card-text">
-                            <small class="text-muted">
-                                <i class="fas fa-users"></i> Capacidade: <?php echo $espaco['capacidade']; ?> pessoas
-                            </small>
-                        </p>
+                        <h5 class="card-title">Informações Gerais</h5>
+                        <p class="card-text">1. No dia de realização do TACF, cada militar deverá estar em posse da sua FICHA DE ANAMNESE PREENCHIDA. Sendo assim, é RESPONSABILIDADE DO MILITAR preencher a Ficha de Anamnese com, no mínimo, 10 (dez) dias de antecedência ao dia agendado para realizar o TACF.
+<br> 2. Ainda que o militar esteja impossibilitado de realizar o TACF por decisão da Junta de Saúde, ele deverá preencher a Ficha de Anamnese e de Avaliação do TACF e anexar o resultado da Junta e a cópia do boletim de publicação no SIGTACF. Nesse caso, o militar não necessita realizar o agendamento. No entanto, esse militar deve ir a SEF para entregar os documentos referentes a dispensa médica, bem como para assinar a lista de presença.
+<br> 3. A realização do 2º TACF / 2025 nesta unidade só será permitida, mediante agendamento prévio. Não será permitido, EM HIPÓTESE ALGUMA, a realização do 2º TACF / 2025 sem que o militar esteja agendado. 
+<br> 4. Cada militar que estiver com seu agendamento confirmado, tem a responsabilidade de gerar sua indisponibilidade para escala de serviço no E-risaer. O documento para comprovar essa indisponibilidade, exigido pelo E-risaer, será a cópia do próprio Zimbra recebido com a confirmação do agendamento.
+<br> 5. Cada militar deve apresentar-se na SEF para realização do TACF, com o 9º uniforme completo (incluindo tênis branco). A troca do tênis, caso o militar deseje, só será permitida quando o militar for realizar a etapa da corrida.</p>
+                        <!--
                         <hr>
                         <h5>Regras de Agendamento</h5>
                         <ul class="list-unstyled">
                             <li><i class="fas fa-clock"></i> Antecedência mínima: <?php echo $config['antecedencia_horas']; ?> horas</li>
                             <li><i class="fas fa-hourglass-half"></i> Máximo de horas consecutivas: <?php echo $config['max_horas_consecutivas']; ?> horas</li>
                         </ul>
+                        -->
                     </div>
                 </div>
             </div>
@@ -91,7 +95,7 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
     <!-- Modal de Agendamento -->
     <div class="modal fade" id="agendamentoModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Novo Agendamento</h5>
@@ -99,79 +103,52 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        <strong>Data e Hora Selecionadas:</strong>
-                        <span id="dataHoraSelecionada"></span>
+                        <strong>Data Selecionada:</strong>
+                        <span id="dataSelecionada"></span>
                     </div>
                     <form id="formAgendamento">
-                        <input type="hidden" id="data_inicio" name="data_inicio">
-                        <input type="hidden" id="data_fim" name="data_fim">
-                        <input type="hidden" id="espaco_id" name="espaco_id">
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Data</label>
-                                <input type="date" class="form-control" id="data_agendamento" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Hora Início</label>
-                                <input type="time" class="form-control" id="hora_inicio" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Duração (horas)</label>
-                                <select class="form-control" id="duracao" required>
-                                    <?php 
-                                    $max_horas = $config['max_horas_consecutivas'];
-                                    for ($i = 1; $i <= $max_horas; $i++) {
-                                        echo "<option value='{$i}'>" . $i . " hora" . ($i > 1 ? 's' : '') . "</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                        <div class="col-md-6">
-                                <label class="form-label">Posto/Graduação</label>
-                                <input type="text" class="form-control" name="posto_graduacao" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Nome do Solicitante</label>
-                                <input type="text" class="form-control" name="nome_solicitante" required>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Setor</label>
-                                <input type="text" class="form-control" name="setor" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Ramal</label>
-                                <input type="text" class="form-control" name="ramal" required>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <label class="form-label">Seu Email</label>
-                                <input type="email" class="form-control" name="email_solicitante" required>
-                                <small class="text-muted">Você receberá uma confirmação por email quando o status do agendamento for atualizado.</small>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Nome do Evento</label>
-                                <input type="text" class="form-control" id="nome_evento" name="nome_evento" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Quantidade de Participantes</label>
-                                <input type="number" class="form-control" name="quantidade_participantes" required>
-                            </div>
-                        </div>
-
+                        <input type="hidden" id="data_agendamento" name="data_agendamento">
                         <div class="mb-3">
-                            <label class="form-label">Observações/Links de Reunião</label>
+                            <label class="form-label">Posto/Graduação</label>
+                            <select class="form-control" name="posto_graduacao" required>
+                                <option value="">Selecione</option>
+                                <option value="Brig">Brigadeiro</option>
+                                <option value="Cel">Coronel</option>
+                                <option value="TCel">Tenente-Coronel</option>
+                                <option value="Maj">Major</option>
+                                <option value="Cap">Capitão</option>
+                                <option value="1T">1º Tenente</option>
+                                <option value="2T">2º Tenente</option>
+                                <option value="Asp">Aspirante</option>
+                                <option value="SO">Suboficial</option>
+                                <option value="1S">1º Sargento</option>
+                                <option value="2S">2º Sargento</option>
+                                <option value="3S">3º Sargento</option>
+                                <option value="CB">Cabo</option>
+                                <option value="S1">S1</option>
+                                <option value="S2">S2</option>
+                                <option value="Rec">Recruta</option>
+                                <option value="Consc">Conscrito</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nome Completo</label>
+                            <input type="text" class="form-control" name="nome_completo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nome de Guerra</label>
+                            <input type="text" class="form-control" name="nome_guerra" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contato</label>
+                            <input type="text" class="form-control" name="contato" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Observações</label>
                             <textarea class="form-control" name="observacoes" rows="3" required></textarea>
                         </div>
                     </form>
@@ -206,7 +183,7 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
     <!-- Footer -->
     <footer class="bg-light mt-5 py-3">
         <div class="container text-center">
-            <p class="mb-0">&copy; <?php echo date('Y'); ?> Base Aérea de Natal. Todos os direitos reservados.</p>
+            <p class="mb-0">&copy; <?php echo date('Y'); ?> ETIC - BANT</p>
         </div>
     </footer>
 
@@ -221,85 +198,61 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
             var calendarEl = document.getElementById('calendario');
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'pt-br',
-                initialView: 'timeGridWeek',
+                initialView: 'dayGridMonth',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    right: ''
                 },
-                slotMinTime: '08:00:00',
-                slotMaxTime: '18:00:00',
-                allDaySlot: false,
                 selectable: true,
                 select: function(info) {
-                    var data = info.start;
-                    var dataFormatada = data.toLocaleDateString('pt-BR');
-                    var horaFormatada = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                    
-                    // Verificar se a data é passada
-                    if (data < new Date()) {
-                        alert('Não é possível agendar datas ou horários passados.');
-                        calendar.unselect();
+                    var data = info.startStr;
+                    // Buscar eventos para saber se a data está bloqueada
+                    fetch('get_agendamentos.php')
+                        .then(response => response.json())
+                        .then(eventos => {
+                            var evento = eventos.find(e => e.start === data);
+                            if (!evento || evento.bloqueada) {
+                                alert('Não há vagas para esta data. Escolha outra.');
+                                return;
+                            }
+                            document.getElementById('dataSelecionada').textContent = data;
+                            document.getElementById('data_agendamento').value = data;
+                            var modal = new bootstrap.Modal(document.getElementById('agendamentoModal'));
+                            modal.show();
+                        });
+                },
+                events: 'get_agendamentos.php',
+                eventDidMount: function(info) {
+                    if (info.event.extendedProps.bloqueada) {
+                        info.el.classList.add('bg-danger', 'text-white');
+                        info.el.innerHTML = 'Sem vagas';
+                    } else {
+                        info.el.classList.add('bg-success', 'text-white');
+			var vagasDisponiveis = info.event.extendedProps.limite - info.event.extendedProps.total;
+                        info.el.innerHTML = 'Disponível<br>(' + vagasDisponiveis + ' vagas)';
+                    }
+                },
+                eventClick: function(info) {
+                    if (info.event.extendedProps.bloqueada) {
+                        alert('Não há vagas para esta data. Escolha outra.');
                         return;
                     }
-                    
-                    document.getElementById('dataHoraSelecionada').textContent = dataFormatada + ' às ' + horaFormatada;
-                    
-                    // Preencher os campos de data e hora
-                    document.getElementById('data_agendamento').value = data.toISOString().split('T')[0];
-                    document.getElementById('hora_inicio').value = data.toTimeString().slice(0, 5);
-                    
-                    // Atualizar datas no formulário
-                    atualizarDatas();
-                    
-                    document.getElementById('espaco_id').value = '<?php echo $espaco_id; ?>';
-                    
+                    document.getElementById('dataSelecionada').textContent = info.event.startStr;
+                    document.getElementById('data_agendamento').value = info.event.startStr;
                     var modal = new bootstrap.Modal(document.getElementById('agendamentoModal'));
                     modal.show();
-                },
-                events: 'get_agendamentos.php?espaco=<?php echo $espaco_id; ?>'
+                }
             });
             calendar.render();
 
-            // Função para atualizar as datas quando o usuário alterar os campos
-            function atualizarDatas() {
-                var data = document.getElementById('data_agendamento').value;
-                var hora = document.getElementById('hora_inicio').value;
-                var duracao = parseInt(document.getElementById('duracao').value);
-                
-                // Criar data no fuso horário local
-                var dataInicio = new Date(data + 'T' + hora + ':00-03:00');
-                var dataFim = new Date(dataInicio);
-                dataFim.setHours(dataFim.getHours() + duracao);
-                
-                // Converter para ISO string mantendo o fuso horário local
-                document.getElementById('data_inicio').value = dataInicio.toISOString();
-                document.getElementById('data_fim').value = dataFim.toISOString();
-                
-                // Atualizar texto da data/hora selecionada
-                document.getElementById('dataHoraSelecionada').textContent = 
-                    dataInicio.toLocaleDateString('pt-BR') + ' às ' + 
-                    dataInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            }
-
-            // Adicionar listeners para atualizar as datas quando os campos mudarem
-            document.getElementById('data_agendamento').addEventListener('change', atualizarDatas);
-            document.getElementById('hora_inicio').addEventListener('change', atualizarDatas);
-            document.getElementById('duracao').addEventListener('change', atualizarDatas);
-
-            // Salvar agendamento
             document.getElementById('btnSalvarAgendamento').addEventListener('click', function() {
-                // Validar data/hora
-                var dataInicio = new Date(document.getElementById('data_inicio').value);
-                if (dataInicio < new Date()) {
-                    alert('Não é possível agendar datas ou horários passados.');
+                var form = document.getElementById('formAgendamento');
+                if (!form.reportValidity()) {
                     return;
                 }
+                var formData = new FormData(form);
 
-                const formData = new FormData(document.getElementById('formAgendamento'));
-                formData.append('espaco_id', '<?php echo $espaco_id; ?>');
-
-                // Mostrar modal de progresso
                 var progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
                 progressModal.show();
 
@@ -307,20 +260,32 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
-                    progressModal.hide();
-                    if (data.success) {
-                        alert('Agendamento realizado com sucesso!');
-                        location.reload();
-                    } else {
-                        alert('Erro ao realizar agendamento: ' + data.message);
+                .then(async function(response) {
+                    var data = null;
+                    try { data = await response.json(); } catch (e) {}
+                    if (!response.ok || !data || !data.success) {
+                        var message = (data && data.message) ? data.message : 'Falha ao salvar o agendamento.';
+                        throw new Error(message);
                     }
+                    return data;
                 })
-                .catch(error => {
+                .then(function(data) {
                     progressModal.hide();
-                    alert('Erro ao realizar agendamento: ' + error.message);
+                    if (data.emails && (data.emails.comunicacao === false || data.emails.solicitante === false)) {
+                        var falhas = [];
+                        if (data.emails.comunicacao === false) falhas.push('comunicação');
+                        if (data.emails.solicitante === false) falhas.push('solicitante');
+                        alert('Agendamento salvo, mas houve falha ao enviar e-mail para: ' + falhas.join(', ') + '.');
+                    } else {
+                        alert('Agendamento realizado com sucesso!');
+                    }
+                    location.reload();
+                })
+                .catch(function(error) {
+                    progressModal.hide();
+                    alert('Erro: ' + error.message);
                 });
+
             });
         });
     </script>

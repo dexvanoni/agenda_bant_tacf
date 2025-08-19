@@ -16,10 +16,9 @@ $agendamento_id = (int)$_GET['id'];
 
 // Buscar agendamento
 $stmt = $conn->prepare("
-    SELECT a.*, e.nome as espaco_nome
-    FROM agendamentos a
-    JOIN espacos e ON a.espaco_id = e.id
-    WHERE a.id = ?
+    SELECT *
+    FROM agendamentos 
+    WHERE id = ?
 ");
 $stmt->execute([$agendamento_id]);
 $agendamento = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -38,10 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
 
         // Buscar informações atualizadas do agendamento
         $stmt = $conn->prepare("
-            SELECT a.*, e.nome as nome_espaco 
-            FROM agendamentos a 
-            JOIN espacos e ON a.espaco_id = e.id 
-            WHERE a.id = ?
+            SELECT * 
+            FROM agendamentos
+            WHERE id = ?
         ");
         $stmt->execute([$agendamento_id]);
         $agendamento_atualizado = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -53,18 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
             'pendente' => 'colocado em análise'
         ];
 
-        require_once '../config/email.php';
-
-        $assunto = "Atualização de Status - Agendamento Sistema BANT";
-        $mensagem = "
-            <h2>Status do seu Agendamento foi Atualizado</h2>
-            <p>Olá {$agendamento_atualizado['nome_solicitante']},</p>
-            <p>O status do seu agendamento foi {$status_texto[$_POST['status']]}.</p>
-            <p><strong>Evento:</strong> {$agendamento_atualizado['nome_evento']}</p>
-            <p><strong>Espaço:</strong> {$agendamento_atualizado['nome_espaco']}</p>
-            <p><strong>Data:</strong> " . date('d/m/Y', strtotime($agendamento_atualizado['data_inicio'])) . "</p>
-            <p><strong>Horário:</strong> " . date('H:i', strtotime($agendamento_atualizado['data_inicio'])) . " às " . date('H:i', strtotime($agendamento_atualizado['data_fim'])) . "</p>
-        ";
 
         if ($_POST['status'] === 'cancelado') {
             $mensagem .= "<p>Seu agendamento foi cancelado. Caso precise reagendar, por favor, faça uma nova solicitação.</p>";
@@ -73,9 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
         } else {
             $mensagem .= "<p>Seu agendamento está em análise. Você receberá uma nova notificação quando houver uma atualização.</p>";
         }
-
-        // Enviar email para o solicitante
-        enviarEmail($agendamento_atualizado['email_solicitante'], $assunto, $mensagem);
 
         header("Location: visualizar_agendamento.php?id={$agendamento_id}&success=1");
     } catch (Exception $e) {
@@ -110,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h1>Visualizar Agendamento</h1>
+                    <h1>Visualizar Agendamento do TACF</h1>
                     <p class="mb-0">Base Aérea de Natal</p>
                 </div>
                 <div class="col-md-4 text-end">
@@ -140,20 +123,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
             <div class="col-md-8">
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Informações do Evento</h5>
                         <div class="row">
+
                             <div class="col-md-6">
-                                <p><strong>Evento:</strong> <?php echo htmlspecialchars($agendamento['nome_evento']); ?></p>
-                                <p><strong>Espaço:</strong> <?php echo htmlspecialchars($agendamento['espaco_nome']); ?></p>
-                                <p><strong>Data Início:</strong> <?php echo date('d/m/Y H:i', strtotime($agendamento['data_inicio'])); ?></p>
-                                <p><strong>Data Fim:</strong> <?php echo date('d/m/Y H:i', strtotime($agendamento['data_fim'])); ?></p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Solicitante:</strong> <?php echo htmlspecialchars($agendamento['posto_graduacao'] . ' ' . $agendamento['nome_solicitante']); ?></p>
-                                <p><strong>Email:</strong> <?php echo htmlspecialchars($agendamento['email_solicitante']); ?></p>
-                                <p><strong>Setor:</strong> <?php echo htmlspecialchars($agendamento['setor']); ?></p>
-                                <p><strong>Ramal:</strong> <?php echo htmlspecialchars($agendamento['ramal']); ?></p>
-                                <p><strong>Participantes:</strong> <?php echo $agendamento['quantidade_participantes']; ?></p>
+                                <p><strong>Data do Teste Físico:</strong> <?php echo date('d/m/Y', strtotime($agendamento['data_inicio'])); ?></p>
+                                <p><strong>Solicitante:</strong> <?php echo htmlspecialchars($agendamento['posto_graduacao'] . ' ' . $agendamento['nome_guerra']); ?></p>
+                                <p><strong>Email:</strong> <?php echo htmlspecialchars($agendamento['email']); ?></p>
+                                <p><strong>Contato:</strong> <?php echo htmlspecialchars($agendamento['contato']); ?></p>
                                 <p>
                                     <strong>Status:</strong>
                                     <span class="badge bg-<?php 
@@ -170,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
 
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Observações/Links de Reunião:</h5>
+                        <h5 class="card-title">Observações</h5>
                         <?php if ($agendamento['observacoes']): ?>
                         <div class="mt-3">
                             <p class="mb-0"><?php echo nl2br(htmlspecialchars($agendamento['observacoes'])); ?></p>

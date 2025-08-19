@@ -37,9 +37,9 @@ try {
     // Buscar agendamentos selecionados
     $placeholders = str_repeat('?,', count($ids) - 1) . '?';
     $stmt = $conn->prepare("
-        SELECT a.*, e.nome as espaco_nome 
+        SELECT a.*, dl.data as data_liberada
         FROM agendamentos a 
-        JOIN espacos e ON a.espaco_id = e.id 
+        JOIN datas_liberadas dl ON a.data_liberada_id = dl.id
         WHERE a.id IN ($placeholders)
     ");
     $stmt->execute($ids);
@@ -56,37 +56,25 @@ try {
     $stmt->execute($params);
 
     // Enviar emails de notificação
+    
+    /*
     foreach ($agendamentos as $agendamento) {
         $assunto = "Atualização de Agendamento - Sistema BANT";
         $mensagem = "
             <h2>Status do Agendamento Atualizado</h2>
-            <p>Olá {$agendamento['nome_solicitante']},</p>
+            <p>Olá {$agendamento['nome_completo']},</p>
             <p>O status do seu agendamento foi atualizado.</p>
-            <p><strong>Evento:</strong> {$agendamento['nome_evento']}</p>
-            <p><strong>Espaço:</strong> {$agendamento['espaco_nome']}</p>
-            <p><strong>Data:</strong> " . date('d/m/Y', strtotime($agendamento['data_inicio'])) . "</p>
-            <p><strong>Horário:</strong> " . date('H:i', strtotime($agendamento['data_inicio'])) . " às " . 
-            date('H:i', strtotime($agendamento['data_fim'])) . "</p>
+            <p><strong>Data:</strong> " . date('d/m/Y', strtotime($agendamento['data_liberada'])) . "</p>
             <p><strong>Novo Status:</strong> " . ucfirst($status) . "</p>
         ";
 
         // Enviar email para o solicitante
-        enviarEmail($agendamento['email_solicitante'], $assunto, $mensagem);
+        enviarEmail($agendamento['email'], $assunto, $mensagem);
 
         // Enviar email para a comunicação social
         enviarEmail($config['email_comunicacao'], $assunto, $mensagem);
-
-        // Enviar email adicional para a Sala de Videoconferência
-        if ($agendamento['espaco_nome'] === 'Sala de Videoconferência') {
-            enviarEmail('etic.bant@fab.mil.br', $assunto, $mensagem);
-        }
-
-        // Enviar email adicional para o Auditório Cine Navy
-        if ($agendamento['espaco_nome'] === 'Auditório Cine Navy') {
-            enviarEmail($config['email_sindico_cine_navy'], $assunto, $mensagem);
-        }
     }
-
+    */
     echo json_encode(['success' => true, 'message' => 'Status atualizado com sucesso']);
 } catch (Exception $e) {
     http_response_code(500);

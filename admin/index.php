@@ -14,23 +14,26 @@ $total_agendamentos = $stmt->fetchColumn();
 $stmt = $conn->query("SELECT COUNT(*) FROM agendamentos WHERE status = 'pendente'");
 $agendamentos_pendentes = $stmt->fetchColumn();
 
-$stmt = $conn->query("SELECT COUNT(*) FROM espacos WHERE status = 'ativo'");
-$espacos_ativos = $stmt->fetchColumn();
+$stmt = $conn->query("SELECT COUNT(*) FROM datas_liberadas");
+$datas_liberadas = $stmt->fetchColumn();
 
 // Buscar últimos agendamentos
 $stmt = $conn->query("
-    SELECT a.*, e.nome as espaco_nome 
-    FROM agendamentos a 
-    JOIN espacos e ON a.espaco_id = e.id 
+    SELECT a.*, dl.data as data_liberada
+    FROM agendamentos a
+    JOIN datas_liberadas dl ON a.data_liberada_id = dl.id
+    WHERE dl.data >= CURRENT_DATE()
     ORDER BY 
         CASE 
             WHEN a.status = 'pendente' THEN 1
-            WHEN a.status = 'aprovado' THEN 2
-            ELSE 3
+            ELSE 2
         END,
-        a.created_at DESC
+        dl.data ASC,
+        a.created_at ASC
+    LIMIT 50
 ");
 $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!DOCTYPE html>
@@ -81,15 +84,17 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="row mb-4">
             <div class="col">
                 <div class="btn-group">
-                    <a href="espacos.php" class="btn btn-primary">
-                        <i class="fas fa-building"></i> Espaços
-                    </a>
-                    <a href="configuracoes.php" class="btn btn-primary">
-                        <i class="fas fa-cog"></i> Configurações
+                    <a href="datas_liberadas.php" class="btn btn-primary">
+                        <i class="fas fa-calendar-check"></i> Datas Liberadas
                     </a>
                     <a href="relatorios.php" class="btn btn-primary">
                         <i class="fas fa-chart-bar"></i> Relatórios
                     </a>
+                    <!--
+                    <a href="configuracoes.php" class="btn btn-primary">
+                        <i class="fas fa-cog"></i> Configurações
+                    </a>
+                    -->
                 </div>
             </div>
         </div>
@@ -115,8 +120,8 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-4">
                 <div class="card card-stats bg-success text-white">
                     <div class="card-body">
-                        <h5 class="card-title">Espaços Ativos</h5>
-                        <p class="card-text display-4"><?php echo $espacos_ativos; ?></p>
+                        <h5 class="card-title">Datas Liberadas</h5>
+                        <p class="card-text display-4"><?php echo $datas_liberadas; ?></p>
                     </div>
                 </div>
             </div>
@@ -145,10 +150,8 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <input class="form-check-input" type="checkbox" id="selecionarTodos">
                                     </div>
                                 </th>
-                                <th>Evento</th>
-                                <th>Espaço</th>
                                 <th>Solicitante</th>
-                                <th>Data</th>
+                                <th>Data do Teste Físico</th>
                                 <th>Status</th>
                                 <th>Ações</th>
                             </tr>
@@ -163,10 +166,8 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                data-status="<?php echo $agendamento['status']; ?>">
                                     </div>
                                 </td>
-                                <td><?php echo htmlspecialchars($agendamento['nome_evento']); ?></td>
-                                <td><?php echo htmlspecialchars($agendamento['espaco_nome']); ?></td>
-                                <td><?php echo htmlspecialchars($agendamento['nome_solicitante']); ?></td>
-                                <td><?php echo date('d/m/Y H:i', strtotime($agendamento['data_inicio'])); ?></td>
+                                <td><?php echo htmlspecialchars($agendamento['posto_graduacao'] . ' ' . $agendamento['nome_guerra']); ?></td>
+                                <td><?php echo date('d/m/Y', strtotime($agendamento['data_liberada'])); ?></td>
                                 <td>
                                     <span class="badge bg-<?php 
                                         echo $agendamento['status'] === 'aprovado' ? 'success' : 

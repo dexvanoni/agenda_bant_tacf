@@ -1,57 +1,30 @@
 <?php
 require_once 'config/database.php';
 
-$espaco_id = isset($_GET['espaco']) ? (int)$_GET['espaco'] : 0;
+// Buscar todas as datas liberadas
+$stmt = $conn->query("SELECT * FROM datas_liberadas ORDER BY data ASC");
+$datas_liberadas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-try {
-    $stmt = $conn->prepare("
-        SELECT 
-            a.id,
-            a.nome_evento as title,
-            a.data_inicio as start,
-            a.data_fim as end,
-            a.status,
-            a.nome_solicitante,
-            a.posto_graduacao,
-            a.setor,
-            a.ramal,
-            a.email_solicitante,
-            a.quantidade_participantes,
-            a.observacoes
-        FROM agendamentos a
-        WHERE a.espaco_id = ? 
-        AND a.status != 'cancelado'
-        ORDER BY a.data_inicio ASC
-    ");
-    
-    $stmt->execute([$espaco_id]);
-    $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Formatar datas para o FullCalendar
-    foreach ($agendamentos as &$agendamento) {
-        $agendamento['start'] = date('c', strtotime($agendamento['start']));
-        $agendamento['end'] = date('c', strtotime($agendamento['end']));
-        
-        // Definir cor baseada no status
-        switch ($agendamento['status']) {
-            case 'aprovado':
-                $agendamento['backgroundColor'] = '#28a745';
-                $agendamento['borderColor'] = '#28a745';
-                break;
-            case 'pendente':
-                $agendamento['backgroundColor'] = '#ffc107';
-                $agendamento['borderColor'] = '#ffc107';
-                break;
-            default:
-                $agendamento['backgroundColor'] = '#6c757d';
-                $agendamento['borderColor'] = '#6c757d';
-        }
-    }
-    
-    header('Content-Type: application/json');
-    echo json_encode($agendamentos);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Erro ao buscar agendamentos: ' . $e->getMessage()]);
+// Buscar quantidade de agendamentos por data (excluindo cancelados)
+$agendamentos_por_data = [];
+$stmt2 = $conn->query("SELECT data_liberada_id, COUNT(*) as total FROM agendamentos WHERE status != 'cancelado' GROUP BY data_liberada_id");
+while ($row = $stmt2->fetch(PDO::FETCH_ASSOC)) {
+    $agendamentos_por_data[$row['data_liberada_id']] = $row['total'];
 }
+
+$eventos = [];
+foreach ($datas_liberadas as $data) {
+    $total = isset($agendamentos_por_data[$data['id']]) ? $agendamentos_por_data[$data['id']] : 0;
+    $bloqueada = $total >= $data['limite_agendamentos'];
+    $eventos[] = [
+        'title' => $bloqueada ? 'Sem vagas' : 'Disponível',
+        'start' => $data['data'],
+        'end' => $data['data'],
+        'bloqueada' => $bloqueada,
+        'limite' => $data['limite_agendamentos'],
+        'total' => $total
+    ];
+}
+header('Content-Type: application/json');
+echo json_encode($eventos);
 ?> 

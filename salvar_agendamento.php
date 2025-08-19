@@ -13,9 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 try {
     // Validar dados
     $required_fields = [
-        'espaco_id', 'nome_solicitante', 'posto_graduacao', 'setor', 'ramal',
-        'email_solicitante', 'nome_evento', 'quantidade_participantes',
-        'data_inicio', 'data_fim', 'observacoes'
+        'posto_graduacao', 'nome_completo', 'nome_guerra', 'email', 'contato', 'data_agendamento'
     ];
 
     foreach ($required_fields as $field) {
@@ -25,157 +23,98 @@ try {
     }
 
     // Validar formato do email
-    if (!filter_var($_POST['email_solicitante'], FILTER_VALIDATE_EMAIL)) {
+    if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
         throw new Exception("Email inválido");
     }
 
-    // Converter datas para o formato MySQL, considerando o fuso horário
-    $data_inicio = new DateTime($_POST['data_inicio']);
-    $data_fim = new DateTime($_POST['data_fim']);
-    
-    // Ajustar para o fuso horário local (UTC-3)
-    $data_inicio->setTimezone(new DateTimeZone('America/Sao_Paulo'));
-    $data_fim->setTimezone(new DateTimeZone('America/Sao_Paulo'));
-    
-    $data_inicio_mysql = $data_inicio->format('Y-m-d H:i:s');
-    $data_fim_mysql = $data_fim->format('Y-m-d H:i:s');
-
-    // Buscar configurações
-    $stmt = $conn->query("SELECT * FROM configuracoes LIMIT 1");
-    $config = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    // Validar antecedência
-    $agora = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
-    $diferenca = $agora->diff($data_inicio);
-    $horas_antecedencia = ($diferenca->days * 24) + $diferenca->h;
-    
-    if ($horas_antecedencia < $config['antecedencia_horas']) {
-        throw new Exception("O agendamento deve ser feito com pelo menos {$config['antecedencia_horas']} horas de antecedência");
+    // Validar se a data está liberada e se há vagas
+    $data_agendamento = $_POST['data_agendamento'];
+    $data_agendamento_dt = new DateTime($data_agendamento);
+    $stmt = $conn->prepare("SELECT id, limite_agendamentos FROM datas_liberadas WHERE data = ?");
+    $stmt->execute([$data_agendamento]);
+    $data_liberada = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$data_liberada) {
+        throw new Exception('Esta data não está liberada para agendamento.');
     }
 
-    // Validar duração máxima
-    $duracao = $data_inicio->diff($data_fim);
-    
-    if ($duracao->h > $config['max_horas_consecutivas']) {
-        throw new Exception("A duração máxima permitida é de {$config['max_horas_consecutivas']} horas");
-    }
-
-    // Verificar conflitos de horário
-    $stmt = $conn->prepare("
-        SELECT nome_evento, data_inicio, data_fim 
-        FROM agendamentos 
-        WHERE espaco_id = ? 
-        AND (
-            (data_inicio < ? AND data_fim > ?) OR  -- Novo agendamento começa durante um existente
-            (data_inicio < ? AND data_fim > ?) OR  -- Novo agendamento termina durante um existente
-            (data_inicio >= ? AND data_fim <= ?)   -- Novo agendamento está completamente dentro de um existente
-        )
-    ");
-    $stmt->execute([
-        $_POST['espaco_id'],
-        $data_fim_mysql, $data_inicio_mysql,  // Para verificar se começa durante
-        $data_fim_mysql, $data_inicio_mysql,  // Para verificar se termina durante
-        $data_inicio_mysql, $data_fim_mysql   // Para verificar se está dentro
-    ]);
-    
-    $conflito = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($conflito) {
-        $data_conflito = new DateTime($conflito['data_inicio']);
-        $data_conflito->setTimezone(new DateTimeZone('America/Sao_Paulo'));
-        $fim_conflito = new DateTime($conflito['data_fim']);
-        $fim_conflito->setTimezone(new DateTimeZone('America/Sao_Paulo'));
-        
-        throw new Exception(
-            "Já existe um agendamento para este horário: " .
-            $conflito['nome_evento'] . " das " .
-            $data_conflito->format('H:i') . " às " .
-            $fim_conflito->format('H:i')
-        );
+    // Contar agendamentos já feitos para esta data (excluindo cancelados)
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM agendamentos WHERE data_liberada_id = ? AND status != 'cancelado'");
+    $stmt->execute([$data_liberada['id']]);
+    $total_agendamentos = $stmt->fetchColumn();
+    if ($total_agendamentos >= $data_liberada['limite_agendamentos']) {
+        throw new Exception('Não há mais vagas para esta data.');
     }
 
     // Inserir agendamento
     $stmt = $conn->prepare("
         INSERT INTO agendamentos (
-            espaco_id, nome_solicitante, posto_graduacao, setor, ramal,
-            email_solicitante, nome_evento, quantidade_participantes,
-            observacoes, data_inicio, data_fim
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            data_liberada_id, posto_graduacao, nome_completo, nome_guerra, email, contato, observacoes, data_inicio, data_fim
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->execute([
-        $_POST['espaco_id'],
-        $_POST['nome_solicitante'],
+        $data_liberada['id'],
         $_POST['posto_graduacao'],
-        $_POST['setor'],
-        $_POST['ramal'],
-        $_POST['email_solicitante'],
-        $_POST['nome_evento'],
-        $_POST['quantidade_participantes'],
-        isset($_POST['observacoes']) ? $_POST['observacoes'] : null,
-        $data_inicio_mysql,
-        $data_fim_mysql
+        $_POST['nome_completo'],
+        $_POST['nome_guerra'],
+        $_POST['email'],
+        $_POST['contato'],
+        $_POST['observacoes'],
+        $data_agendamento,
+        $data_agendamento
     ]);
 
     $agendamento_id = $conn->lastInsertId();
 
-    // Buscar informações do espaço
-    $stmt = $conn->prepare("SELECT nome FROM espacos WHERE id = ?");
-    $stmt->execute([$_POST['espaco_id']]);
-    $espaco = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Buscar configurações (e-mail da comunicação)
+    $stmt = $conn->query("SELECT * FROM configuracoes LIMIT 1");
+    $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // Enviar email para a comunicação social
-    $assunto = "Novo Agendamento - Sistema BANT";
+    $assunto = "Novo Agendamento de TACF";
     $mensagem = "
         <h2>Novo Agendamento Realizado</h2>
-        <p><strong>Evento:</strong> {$_POST['nome_evento']}</p>
-        <p><strong>Espaço:</strong> {$espaco['nome']}</p>
-        <p><strong>Data:</strong> " . $data_inicio->format('d/m/Y') . "</p>
-        <p><strong>Horário:</strong> " . $data_inicio->format('H:i') . " às " . $data_fim->format('H:i') . "</p>
-        <p><strong>Solicitante:</strong> {$_POST['posto_graduacao']} {$_POST['nome_solicitante']}</p>
-        <p><strong>Email:</strong> {$_POST['email_solicitante']}</p>
-        <p><strong>Setor:</strong> {$_POST['setor']}</p>
-        <p><strong>Ramal:</strong> {$_POST['ramal']}</p>
-        <p><strong>Número de Participantes:</strong> {$_POST['quantidade_participantes']}</p>
-        <p><strong>Observações/Link:</strong> " . (isset($_POST['observacoes']) ? $_POST['observacoes'] : "Nenhuma") . "</p>
+        <p><strong>Data do TACF:</strong> " . $data_agendamento_dt->format('d/m/Y') . "</p>
+        <p><strong>Solicitante:</strong> {$_POST['posto_graduacao']} {$_POST['nome_guerra']}</p>
+        <p><strong>Email:</strong> {$_POST['email']}</p>
         <p>Acesse o sistema para aprovar ou cancelar este agendamento.</p>
     ";
 
-    // Enviar email para a comunicação social
-    enviarEmail($config['email_comunicacao'], $assunto, $mensagem);
-
-    // Enviar email adicional para a Sala de Videoconferência
-    if ($espaco['nome'] === 'Sala de Videoconferência') {
-        enviarEmail('etic.bant@fab.mil.br', $assunto, $mensagem);
-    }
-
-    // Enviar email adicional para o Auditório Cine Navy
-    if ($espaco['nome'] === 'Auditório Cine Navy') {
-        enviarEmail($config['email_sindico_cine_navy'], $assunto, $mensagem);
-    }
+        // Enviar email para a comunicação social
+        if (!empty($config['email_comunicacao'])) {
+            enviarEmail($config['email_comunicacao'], $assunto, $mensagem);
+        }
 
     // Enviar email de confirmação para o solicitante
-    $assunto_solicitante = "Confirmação de Agendamento - Sistema BANT";
+    $assunto_solicitante = "Confirmação de Agendamento do TACF";
     $mensagem_solicitante = "
         <h2>Seu Agendamento foi Registrado</h2>
-        <p>Olá {$_POST['nome_solicitante']},</p>
+        <p>Olá {$_POST['posto_graduacao']} {$_POST['nome_guerra']},</p>
         <p>Seu agendamento foi registrado com sucesso e está aguardando aprovação.</p>
-        <p><strong>Evento:</strong> {$_POST['nome_evento']}</p>
-        <p><strong>Espaço:</strong> {$espaco['nome']}</p>
-        <p><strong>Data:</strong> " . $data_inicio->format('d/m/Y') . "</p>
-        <p><strong>Horário:</strong> " . $data_inicio->format('H:i') . " às " . $data_fim->format('H:i') . "</p>
+        <p><strong>Data do TACF:</strong> " . $data_agendamento_dt->format('d/m/Y') . "</p>
         <p>Você receberá um email quando o status do seu agendamento for atualizado.</p>
     ";
 
-    // Enviar email para o solicitante
-    enviarEmail($_POST['email_solicitante'], $assunto_solicitante, $mensagem_solicitante);
+    // Enviar emails e coletar status
+    $status_email_comunicacao = null;
+    if (!empty($config['email_comunicacao'])) {
+        $status_email_comunicacao = enviarEmail($config['email_comunicacao'], $assunto, $mensagem);
+    }
+    $status_email_solicitante = enviarEmail($_POST['email'], $assunto_solicitante, $mensagem_solicitante);
+    
 
     // Retornar sucesso com status 200
     http_response_code(200);
     echo json_encode([
         'success' => true,
         'message' => 'Agendamento realizado com sucesso',
-        'agendamento_id' => $agendamento_id
+        'agendamento_id' => $agendamento_id,
+        'emails' => [
+            'comunicacao' => $status_email_comunicacao,
+            'solicitante' => $status_email_solicitante
+        ]
     ]);
+    return true;
 } catch (Exception $e) {
     // Retornar erro com status 400 apenas para erros de validação
     http_response_code(400);
@@ -185,4 +124,5 @@ try {
         'error_type' => 'validation_error'
     ]);
 }
+
 ?> 

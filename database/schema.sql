@@ -27,23 +27,19 @@ CREATE TABLE IF NOT EXISTS espacos (
 -- Tabela de agendamentos
 CREATE TABLE IF NOT EXISTS agendamentos (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    espaco_id INT NOT NULL,
-    nome_solicitante VARCHAR(100) NOT NULL,
+    data_liberada_id INT NOT NULL,
     posto_graduacao VARCHAR(50) NOT NULL,
-    setor VARCHAR(100) NOT NULL,
-    ramal VARCHAR(20) NOT NULL,
-    nome_evento VARCHAR(255) NOT NULL,
-    categoria_evento VARCHAR(100) NOT NULL,
-    quantidade_participantes INT NOT NULL,
-    apoio_rancho BOOLEAN DEFAULT FALSE,
-    apoio_ti BOOLEAN DEFAULT FALSE,
+    nome_completo VARCHAR(100) NOT NULL,
+    nome_guerra VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    contato VARCHAR(50) NOT NULL,
     observacoes TEXT,
-    data_inicio DATETIME NOT NULL,
-    data_fim DATETIME NOT NULL,
+    data_inicio DATE NOT NULL,
+    data_fim DATE NOT NULL,
     status ENUM('pendente', 'aprovado', 'cancelado') DEFAULT 'pendente',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (espaco_id) REFERENCES espacos(id)
+    FOREIGN KEY (data_liberada_id) REFERENCES datas_liberadas(id)
 );
 
 -- Inserir configurações padrão
