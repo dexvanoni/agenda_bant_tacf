@@ -1,0 +1,13 @@
+vendor/
+config/email.php
+.env
+.DS_Store
+Thumbs.db
+node_modules/
+.idea/
+.vscode/
+*.log
+*.cache
+.classpath
+.project
+.settings/
