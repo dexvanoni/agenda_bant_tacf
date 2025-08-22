@@ -18,13 +18,14 @@ $stmt = $conn->query("SELECT COUNT(*) FROM datas_liberadas");
 $datas_liberadas = $stmt->fetchColumn();
 
 // Buscar últimos agendamentos
+/*
 $stmt = $conn->query("
     SELECT a.*, dl.data as data_liberada
     FROM agendamentos a
     JOIN datas_liberadas dl ON a.data_liberada_id = dl.id
     WHERE dl.data >= CURRENT_DATE()
-    ORDER BY 
-        CASE 
+    ORDER BY
+        CASE
             WHEN a.status = 'pendente' THEN 1
             ELSE 2
         END,
@@ -33,6 +34,19 @@ $stmt = $conn->query("
     LIMIT 50
 ");
 $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+*/
+$stmt = $conn->query("
+    SELECT a.*, dl.data as data_liberada
+    FROM agendamentos a
+    JOIN datas_liberadas dl ON a.data_liberada_id = dl.id
+    WHERE dl.data >= CURRENT_DATE()
+    ORDER BY
+        dl.data ASC,
+        a.created_at DESC
+");
+$agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
 
 ?>
 
@@ -46,6 +60,9 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
     <style>
         .header-bant {
             background-color: #1a237e;
@@ -142,7 +159,7 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <div class="card-body">
                 <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                    <table class="table table-striped table-hover">
+                    <table id="tabelaAgendamentos" class="table table-striped table-hover" style="width:100%">
                         <thead class="sticky-top bg-white">
                             <tr>
                                 <th>
@@ -219,9 +236,29 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (requerido pelo DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar DataTables na tabela de agendamentos
+            var tabela = $('#tabelaAgendamentos').DataTable({
+                language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
+                responsive: true,
+                order: [[2, 'asc']],
+                columnDefs: [
+                    { targets: [0, 4], orderable: false, searchable: false }
+                ],
+                pageLength: 25,
+                lengthMenu: [10, 25, 50, 100],
+                stateSave: true
+            });
+
             const selecionarTodos = document.getElementById('selecionarTodos');
             const checkboxes = document.querySelectorAll('.agendamento-checkbox');
             const btnAprovarSelecionados = document.getElementById('btnAprovarSelecionados');

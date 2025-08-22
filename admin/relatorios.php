@@ -9,10 +9,11 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 // Filtro de data
 $data_filtro = isset($_GET['data']) ? $_GET['data'] : '';
-$where = '';
-$params = [];
+$where = 'WHERE a.status = ?';
+$params = ['aprovado'];
+
 if ($data_filtro) {
-    $where = 'WHERE dl.data = ?';
+    $where .= ' AND dl.data = ?';
     $params[] = $data_filtro;
 }
 
