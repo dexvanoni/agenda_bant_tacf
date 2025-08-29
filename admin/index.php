@@ -107,6 +107,9 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="relatorios.php" class="btn btn-primary">
                         <i class="fas fa-chart-bar"></i> Relatórios
                     </a>
+                    <button type="button" class="btn btn-danger" id="btnLimparSistema">
+                        <i class="fas fa-trash-alt"></i> Limpar Sistema
+                    </button>
                     <!--
                     <a href="configuracoes.php" class="btn btn-primary">
                         <i class="fas fa-cog"></i> Configurações
@@ -227,6 +230,51 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
+    <!-- Modal de Confirmação para Limpeza do Sistema -->
+    <div class="modal fade" id="modalLimparSistema" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-warning border-danger">
+                    <h5 class="modal-title text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> ATENÇÃO: LIMPEZA TOTAL DO SISTEMA
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-danger text-warning">
+                    <div class="alert alert-warning border-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-radiation"></i> OPERAÇÃO IRREVERSÍVEL!
+                        </h6>
+                        <p class="mb-2">Esta ação irá:</p>
+                        <ul class="mb-3">
+                            <li><strong>APAGAR TODOS os agendamentos</strong> (pendentes, aprovados e cancelados)</li>
+                            <li><strong>APAGAR TODAS as datas liberadas</strong></li>
+                            <li><strong>ZERAR completamente o sistema</strong></li>
+                            <li><strong>NÃO PODE ser desfeita</strong></li>
+                        </ul>
+                        <p class="mb-0"><strong>Você tem certeza absoluta que deseja continuar?</strong></p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p class="mb-3">
+                            <i class="fas fa-keyboard"></i> Digite <strong>"LIMPAR"</strong> para confirmar:
+                        </p>
+                        <input type="text" class="form-control form-control-lg text-center mb-3" 
+                               id="confirmacaoLimpeza" placeholder="Digite LIMPAR" maxlength="6">
+                    </div>
+                </div>
+                <div class="modal-footer bg-danger border-danger">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-warning" id="btnConfirmarLimpeza" disabled>
+                        <i class="fas fa-trash-alt"></i> LIMPAR SISTEMA COMPLETAMENTE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-light mt-5 py-3">
         <div class="container text-center">
@@ -323,6 +371,67 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             // Eventos dos botões
             btnAprovarSelecionados.addEventListener('click', () => atualizarStatusAgendamentos('aprovado'));
             btnCancelarSelecionados.addEventListener('click', () => atualizarStatusAgendamentos('cancelado'));
+
+            // Funcionalidade de limpeza do sistema
+            const btnLimparSistema = document.getElementById('btnLimparSistema');
+            const modalLimparSistema = new bootstrap.Modal(document.getElementById('modalLimparSistema'));
+            const confirmacaoLimpeza = document.getElementById('confirmacaoLimpeza');
+            const btnConfirmarLimpeza = document.getElementById('btnConfirmarLimpeza');
+
+            // Abrir modal de limpeza
+            btnLimparSistema.addEventListener('click', function() {
+                modalLimparSistema.show();
+                confirmacaoLimpeza.value = '';
+                btnConfirmarLimpeza.disabled = true;
+            });
+
+            // Controlar habilitação do botão de confirmação
+            confirmacaoLimpeza.addEventListener('input', function() {
+                btnConfirmarLimpeza.disabled = (this.value.toUpperCase() !== 'LIMPAR');
+            });
+
+            // Confirmar limpeza do sistema
+            btnConfirmarLimpeza.addEventListener('click', async function() {
+                if (confirmacaoLimpeza.value.toUpperCase() !== 'LIMPAR') {
+                    alert('Digite "LIMPAR" para confirmar a operação!');
+                    return;
+                }
+
+                if (!confirm('ATENÇÃO FINAL!\n\nVocê está prestes a APAGAR TODOS os dados do sistema!\n\nEsta ação é IRREVERSÍVEL e não pode ser desfeita!\n\nConfirma que deseja continuar?')) {
+                    return;
+                }
+
+                try {
+                    // Mostrar modal de progresso
+                    progressModal.show();
+                    
+                    const response = await fetch('limpar_sistema.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    const data = await response.json();
+                    
+                    // Esconder modais
+                    progressModal.hide();
+                    modalLimparSistema.hide();
+                    
+                    if (data.success) {
+                        alert('SISTEMA LIMPO COM SUCESSO!\n\n' + 
+                              'Agendamentos removidos: ' + data.dados_removidos.agendamentos + '\n' +
+                              'Datas liberadas removidas: ' + data.dados_removidos.datas_liberadas + '\n\n' +
+                              'O sistema foi completamente zerado.');
+                        location.reload();
+                    } else {
+                        alert('Erro ao limpar sistema: ' + data.message);
+                    }
+                } catch (error) {
+                    progressModal.hide();
+                    alert('Erro ao processar a requisição: ' + error.message);
+                }
+            });
         });
     </script>
 </body>

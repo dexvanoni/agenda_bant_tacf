@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 try {
     // Validar dados
     $required_fields = [
-        'posto_graduacao', 'nome_completo', 'nome_guerra', 'email', 'contato', 'data_agendamento'
+        'cpf', 'posto_graduacao', 'nome_completo', 'nome_guerra', 'email', 'contato', 'data_agendamento'
     ];
 
     foreach ($required_fields as $field) {
@@ -25,6 +25,19 @@ try {
     // Validar formato do email
     if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
         throw new Exception("Email inválido");
+    }
+
+    // Validar CPF
+    $cpf = preg_replace('/[^0-9]/', '', $_POST['cpf']);
+    if (strlen($cpf) !== 11) {
+        throw new Exception("CPF inválido");
+    }
+
+    // Verificar se já existe agendamento ativo para este CPF (excluindo cancelados)
+    $stmt = $conn->prepare("SELECT id FROM agendamentos WHERE cpf = ? AND status != 'cancelado'");
+    $stmt->execute([$cpf]);
+    if ($stmt->fetch()) {
+        throw new Exception("O agendamento é único. Caso haja necessidade de reagendamento, solicite através de Ofício via Cadeia de Comando.");
     }
 
     // Validar se a data está liberada e se há vagas
@@ -48,8 +61,8 @@ try {
     // Inserir agendamento
     $stmt = $conn->prepare("
         INSERT INTO agendamentos (
-            data_liberada_id, posto_graduacao, nome_completo, nome_guerra, email, contato, observacoes, data_inicio, data_fim
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            data_liberada_id, posto_graduacao, nome_completo, nome_guerra, cpf, email, contato, observacoes, data_inicio, data_fim
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->execute([
@@ -57,6 +70,7 @@ try {
         $_POST['posto_graduacao'],
         $_POST['nome_completo'],
         $_POST['nome_guerra'],
+        $cpf,
         $_POST['email'],
         $_POST['contato'],
         $_POST['observacoes'],
