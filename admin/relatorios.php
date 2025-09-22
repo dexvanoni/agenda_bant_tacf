@@ -39,6 +39,65 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- DataTables CSS -->
     <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+        .table-responsive {
+            border-radius: 0.375rem;
+            overflow-x: auto;
+        }
+        
+        #tabelaRelatorio {
+            font-size: 0.9rem;
+        }
+        
+        #tabelaRelatorio thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        #tabelaRelatorio tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_processing,
+        .dataTables_wrapper .dataTables_paginate {
+            margin-bottom: 1rem;
+        }
+        
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .btn-sm {
+            font-size: 0.8rem;
+        }
+        
+        .text-truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+            
+            #tabelaRelatorio th,
+            #tabelaRelatorio td {
+                padding: 0.5rem 0.25rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-4">
@@ -57,44 +116,69 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </form>
         
-        <div class="card">
-            <div class="card-body">
-                <table id="tabelaRelatorio" class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>Data do TACF</th>
-                            <th>P./Grad.</th>
-                            <th>Nome Completo</th>
-                            <th>Nome de Guerra</th>
-                            <th>Email</th>
-                            <th>Contato</th>
-                            <th>Observações</th>
-                            <th>Status</th>
-                            <th>Data/Hora Agendamento</th>
-     			    <th>Assinatura</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($agendamentos as $a): ?>
-                        <tr>
-                            <td><?= date('d/m/Y', strtotime($a['data_liberada'])) ?></td>
-                            <td><?= htmlspecialchars($a['posto_graduacao']) ?></td>
-                            <td><?= htmlspecialchars($a['nome_completo']) ?></td>
-                            <td><?= htmlspecialchars($a['nome_guerra']) ?></td>
-                            <td><?= htmlspecialchars($a['email']) ?></td>
-                            <td><?= htmlspecialchars($a['contato']) ?></td>
-                            <td><?= htmlspecialchars($a['observacoes']) ?></td>
-                            <td>
-                                <span class="badge bg-<?= $a['status'] === 'aprovado' ? 'success' : ($a['status'] === 'pendente' ? 'warning' : 'danger') ?>">
-                                    <?= ucfirst($a['status']) ?>
-                                </span>
-                            </td>
-                            <td><?= date('d/m/Y H:i', strtotime($a['created_at'])) ?></td>
-			    <td>__________________________</td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-table me-2"></i>Relatório de Agendamentos
+                    <span class="badge bg-light text-primary ms-2"><?= count($agendamentos) ?> registros</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="tabelaRelatorio" class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width: 100px;">Data TACF</th>
+                                <th class="text-center" style="width: 80px;">P./Grad.</th>
+                                <th style="min-width: 200px;">Nome Completo</th>
+                                <th style="min-width: 120px;">Nome de Guerra</th>
+                                <th class="text-center" style="width: 120px;">Contato</th>
+                                <th class="text-center" style="width: 100px;">Status</th>
+                                <th class="text-center" style="width: 140px;">Data Agendamento</th>
+                                <th style="display: none;">Email</th>
+                                <th style="display: none;">Observações</th>
+                                <th style="display: none;">Assinatura</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($agendamentos as $a): ?>
+                            <tr>
+                                <td class="text-center">
+                                    <span class="badge bg-info text-dark">
+                                        <?= date('d/m/Y', strtotime($a['data_liberada'])) ?>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <small class="text-muted"><?= htmlspecialchars($a['posto_graduacao']) ?></small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold"><?= htmlspecialchars($a['nome_completo']) ?></div>
+                                </td>
+                                <td>
+                                    <span class="text-primary fw-semibold"><?= htmlspecialchars($a['nome_guerra']) ?></span>
+                                </td>
+                                <td class="text-center">
+                                    <small><?= htmlspecialchars($a['contato']) ?></small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-<?= $a['status'] === 'aprovado' ? 'success' : ($a['status'] === 'pendente' ? 'warning' : 'danger') ?>">
+                                        <?= ucfirst($a['status']) ?>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <small class="text-muted">
+                                        <?= date('d/m/Y H:i', strtotime($a['created_at'])) ?>
+                                    </small>
+                                </td>
+                                <!-- Colunas ocultas para exportação -->
+                                <td style="display: none;"><?= htmlspecialchars($a['email']) ?></td>
+                                <td style="display: none;"><?= htmlspecialchars($a['observacoes'] ?: '---') ?></td>
+                                <td style="display: none;">__________________________</td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -121,24 +205,45 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 language: {
                     url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json'
                 },
-                dom: 'Bfrtip',
+                dom: '<"row"<"col-sm-12 col-md-6"B><"col-sm-12 col-md-6"f>>' +
+                     '<"row"<"col-sm-12"tr>>' +
+                     '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 buttons: [
                     {
                         extend: 'excel',
                         text: '<i class="fas fa-file-excel"></i> Excel',
-                        className: 'btn btn-success btn-sm',
+                        className: 'btn btn-success btn-sm me-1',
                         title: 'Relatório de Agendamentos - BANT',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] // Todas as colunas
                         }
                     },
                     {
                         extend: 'pdf',
                         text: '<i class="fas fa-file-pdf"></i> PDF',
-                        className: 'btn btn-danger btn-sm',
+                        className: 'btn btn-danger btn-sm me-1',
                         title: 'Relatório de Agendamentos - BANT',
+                        orientation: 'landscape',
+                        pageSize: 'A4',
                         exportOptions: {
-                            columns: [0, 1, 3, 5, 6, 8, 9]
+                            columns: [0, 1, 3, 4, 9] // Data TACF, P./Grad, Nome de Guerra, Contato, Assinatura
+                        },
+                        customize: function(doc) {
+                            doc.content[1].table.widths = ['20%', '15%', '25%', '20%', '20%'];
+                            doc.styles.tableHeader.fontSize = 10;
+                            doc.styles.tableBodyEven.fontSize = 9;
+                            doc.styles.tableBodyOdd.fontSize = 9;
+                            doc.styles.tableHeader.alignment = 'center';
+                            doc.styles.tableBodyEven.alignment = 'center';
+                            doc.styles.tableBodyOdd.alignment = 'center';
+                            
+                            // Ajustar alinhamento específico para algumas colunas
+                            doc.content[1].table.body.forEach(function(row, index) {
+                                if (index > 0) { // Pular cabeçalho
+                                    row[2].alignment = 'left'; // Nome de Guerra - alinhado à esquerda
+                                    row[3].alignment = 'left'; // Contato - alinhado à esquerda
+                                }
+                            });
                         }
                     },
                     {
@@ -147,24 +252,96 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         className: 'btn btn-info btn-sm',
                         title: 'Relatório de Agendamentos - BANT',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                            columns: [0, 1, 3, 4, 9] // Data TACF, P./Grad, Nome de Guerra, Contato, Assinatura
+                        },
+                        customize: function(win) {
+                            // Remover elementos desnecessários
+                            $(win.document.body).find('table').addClass('table table-bordered');
+                            $(win.document.body).find('thead th').css({
+                                'background-color': '#f8f9fa',
+                                'font-weight': 'bold',
+                                'text-align': 'center',
+                                'border': '1px solid #dee2e6'
+                            });
+                            $(win.document.body).find('tbody td').css({
+                                'border': '1px solid #dee2e6',
+                                'padding': '8px'
+                            });
+                            
+                            // Ajustar larguras das colunas
+                            $(win.document.body).find('table').css('width', '100%');
+                            $(win.document.body).find('thead th:nth-child(1)').css('width', '20%'); // Data TACF
+                            $(win.document.body).find('thead th:nth-child(2)').css('width', '15%'); // P./Grad
+                            $(win.document.body).find('thead th:nth-child(3)').css('width', '25%'); // Nome de Guerra
+                            $(win.document.body).find('thead th:nth-child(4)').css('width', '20%'); // Contato
+                            $(win.document.body).find('thead th:nth-child(5)').css('width', '20%'); // Assinatura
                         }
                     }
                 ],
                 pageLength: 25,
                 order: [[0, 'desc'], [8, 'desc']],
-                responsive: true,
+                responsive: {
+                    details: {
+                        type: 'column',
+                        target: 'tr'
+                    }
+                },
+                scrollX: true,
+                autoWidth: false,
                 columnDefs: [
                     {
-                        targets: [6], // Coluna de observações
-                        render: function(data, type, row) {
-                            if (type === 'display') {
-                                return data.length > 50 ? data.substr(0, 50) + '...' : data;
-                            }
-                            return data;
-                        }
+                        targets: [0], // Data TACF
+                        className: 'text-center',
+                        width: '100px'
+                    },
+                    {
+                        targets: [1], // P./Grad.
+                        className: 'text-center',
+                        width: '80px'
+                    },
+                    {
+                        targets: [2], // Nome Completo
+                        width: '200px'
+                    },
+                    {
+                        targets: [3], // Nome de Guerra
+                        width: '120px'
+                    },
+                    {
+                        targets: [4], // Contato
+                        className: 'text-center',
+                        width: '120px'
+                    },
+                    {
+                        targets: [5], // Status
+                        className: 'text-center',
+                        width: '100px'
+                    },
+                    {
+                        targets: [6], // Data Agendamento
+                        className: 'text-center',
+                        width: '140px'
+                    },
+                    {
+                        targets: [7], // Email (oculta)
+                        visible: false,
+                        className: 'text-center'
+                    },
+                    {
+                        targets: [8], // Observações (oculta)
+                        visible: false
+                    },
+                    {
+                        targets: [9], // Assinatura (oculta)
+                        visible: false,
+                        orderable: false,
+                        className: 'text-center'
                     }
-                ]
+                ],
+                initComplete: function() {
+                    // Ajustar largura da tabela após inicialização
+                    this.api().columns.adjust();
+                }
             });
         });
     </script>

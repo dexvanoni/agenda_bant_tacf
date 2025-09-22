@@ -48,8 +48,7 @@ try {
     // Atualizar status dos agendamentos
     $stmt = $conn->prepare("
         UPDATE agendamentos 
-        SET status = ?, 
-            updated_at = NOW() 
+        SET status = ? 
         WHERE id IN ($placeholders)
     ");
     $params = array_merge([$status], $ids);

@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
             'pendente' => 'colocado em análise'
         ];
 
+        $mensagem = "";
 
         if ($_POST['status'] === 'cancelado') {
             $mensagem .= "<p>Seu agendamento foi cancelado. Caso precise reagendar, por favor, faça uma nova solicitação.</p>";

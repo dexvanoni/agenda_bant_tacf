@@ -26,9 +26,9 @@ try {
 
     // Buscar informações do agendamento
     $stmt = $conn->prepare("
-        SELECT a.*, e.nome as nome_espaco 
+        SELECT a.*, dl.data as data_liberada 
         FROM agendamentos a 
-        JOIN espacos e ON a.espaco_id = e.id 
+        JOIN datas_liberadas dl ON a.data_liberada_id = dl.id 
         WHERE a.id = ?
     ");
     $stmt->execute([$agendamento_id]);
@@ -52,12 +52,10 @@ try {
     $assunto = "Atualização de Status - Agendamento Sistema BANT";
     $mensagem = "
         <h2>Status do seu Agendamento foi Atualizado</h2>
-        <p>Olá {$agendamento['nome_solicitante']},</p>
+        <p>Olá {$agendamento['nome_completo']},</p>
         <p>O status do seu agendamento foi {$status_texto[$status]}.</p>
-        <p><strong>Evento:</strong> {$agendamento['nome_evento']}</p>
-        <p><strong>Espaço:</strong> {$agendamento['nome_espaco']}</p>
-        <p><strong>Data:</strong> " . date('d/m/Y', strtotime($agendamento['data_inicio'])) . "</p>
-        <p><strong>Horário:</strong> " . date('H:i', strtotime($agendamento['data_inicio'])) . " às " . date('H:i', strtotime($agendamento['data_fim'])) . "</p>
+        <p><strong>Data:</strong> " . date('d/m/Y', strtotime($agendamento['data_liberada'])) . "</p>
+        <p><strong>Militar:</strong> {$agendamento['posto_graduacao']} {$agendamento['nome_guerra']}</p>
     ";
 
     if ($status === 'cancelado') {
@@ -69,20 +67,12 @@ try {
     }
 
     // Enviar email para o solicitante
-    enviarEmail($agendamento['email_solicitante'], $assunto, $mensagem);
+    enviarEmail($agendamento['email'], $assunto, $mensagem);
 
-    // Enviar email adicional para a Sala de Videoconferência
-    if ($agendamento['nome_espaco'] === 'Sala de Videoconferência') {
-        enviarEmail('etic.bant@fab.mil.br', $assunto, $mensagem);
-    }
-
-    // Enviar email adicional para o Auditório Cine Navy
-    if ($agendamento['nome_espaco'] === 'Auditório Cine Navy') {
-        // Buscar email do síndico
-        $stmt = $conn->query("SELECT email_sindico_cine_navy FROM configuracoes LIMIT 1");
-        $config = $stmt->fetch(PDO::FETCH_ASSOC);
-        enviarEmail($config['email_sindico_cine_navy'], $assunto, $mensagem);
-    }
+    // Enviar email para a comunicação social
+    $stmt = $conn->query("SELECT email_comunicacao FROM configuracoes LIMIT 1");
+    $config = $stmt->fetch(PDO::FETCH_ASSOC);
+    enviarEmail($config['email_comunicacao'], $assunto, $mensagem);
 
     // Retornar sucesso
     echo json_encode([

@@ -1,4 +1,5 @@
 <?php
+header('Content-Type: text/html; charset=UTF-8');
 require_once 'config/database.php';
 
 /*if (!isset($_GET['espaco'])) {
@@ -19,6 +20,19 @@ if (!$espaco) {
 // Buscar configurações
 $stmt = $conn->query("SELECT * FROM configuracoes LIMIT 1");
 $config = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Buscar configuração do aviso popup
+$stmt = $conn->query("SELECT * FROM aviso_popup WHERE ativo = 1 ORDER BY id DESC LIMIT 1");
+$aviso_popup = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Se não existir aviso ativo, usar valores padrão
+if (!$aviso_popup) {
+    $aviso_popup = [
+        'titulo' => 'Atenção aos horários do TACF',
+        'conteudo' => '<p class="mb-2"><strong>A Partir do dia 15 DE SETEMBRO</strong>, os horários de realização do TACF serão os seguintes:</p><ul class="mb-0"><li><strong>Segunda a Quinta-feira</strong> das 14:30h às 16h</li><li><strong>Sexta-feira</strong> das 08h às 09:30h</li></ul>',
+        'ativo' => 1
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -222,7 +236,7 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                     <div class="card-body">
                         <h5 class="card-title">Informações Gerais</h5>
                         <p class="card-text">1. No dia de realização do TACF, cada militar deverá estar em posse da sua FICHA DE ANAMNESE PREENCHIDA. Sendo assim, é RESPONSABILIDADE DO MILITAR preencher a Ficha de Anamnese com, no mínimo, 10 (dez) dias de antecedência ao dia agendado para realizar o TACF.
-<br> 2. Ainda que o militar esteja impossibilitado de realizar o TACF por decisão da Junta de Saúde, ele deverá preencher a Ficha de Anamnese e de Avaliação do TACF e anexar o resultado da Junta e a cópia do boletim de publicação no SIGTACF. Nesse caso, o militar não necessita realizar o agendamento. No entanto, esse militar deve ir a SEF para entregar os documentos referentes a dispensa médica, bem como para assinar a lista de presença.
+<br> 2. Ainda que o militar esteja impossibilitado de realizar o TACF por decisão da Junta de Saúde, ele deverá preencher a Ficha de Anamnese e de Avaliação do TACF e anexar o resultado da Junta e a cópia do boletim de publicação no SIGTACF. <strong>NESSE CASO, O MILITAR NÃO DEVE REALIZAR O AGENDAMENTO</strong>. No entanto, esse militar deve ir a SEF para entregar os documentos referentes a dispensa médica, bem como para assinar a lista de presença.
 <br> 3. A realização do 2º TACF / 2025 nesta unidade só será permitida, mediante agendamento prévio. Não será permitido, EM HIPÓTESE ALGUMA, a realização do 2º TACF / 2025 sem que o militar esteja agendado. 
 <br> 4. Cada militar que estiver com seu agendamento confirmado, tem a responsabilidade de gerar sua indisponibilidade para escala de serviço no E-risaer. O documento para comprovar essa indisponibilidade, exigido pelo E-risaer, será a cópia do próprio Zimbra recebido com a confirmação do agendamento.
 <br> 5. Cada militar deve apresentar-se na SEF para realização do TACF, com o 9º uniforme completo (incluindo tênis branco). A troca do tênis, caso o militar deseje, só será permitida quando o militar for realizar a etapa da corrida.</p>
@@ -399,10 +413,31 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
         </div>
     </div>
 
+    <!-- Aviso Modal -->
+    <?php if ($aviso_popup['ativo']): ?>
+    <div class="modal fade" id="avisoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-warning text-dark border-0">
+                    <h5 class="modal-title"><?php echo htmlspecialchars($aviso_popup['titulo']); ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <?php echo $aviso_popup['conteudo']; ?>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+
     <!-- Footer -->
     <footer class="bg-light mt-5 py-3">
         <div class="container text-center">
-            <p class="mb-0">&copy; <?php echo date('Y'); ?> ETIC - BANT</p>
+            <p class="mb-0">&copy; <?php echo date('Y'); ?> ETIC - BANT | Desenvolvido por 2S VANONI</p>
         </div>
     </footer>
 
@@ -464,6 +499,12 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                 }
             });
             calendar.render();
+
+            // Exibir aviso ao carregar a página (apenas se o aviso estiver ativo)
+            <?php if ($aviso_popup['ativo']): ?>
+            var avisoModal = new bootstrap.Modal(document.getElementById('avisoModal'));
+            avisoModal.show();
+            <?php endif; ?>
 
             // Função para formatar CPF
             function formatarCPF(cpf) {
@@ -623,6 +664,7 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                 });
 
             });
+
         });
     </script>
 </body>

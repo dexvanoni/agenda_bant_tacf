@@ -194,6 +194,7 @@ exit();
         </div>
     </div>
 
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Função para buscar militares
@@ -361,6 +362,7 @@ exit();
                     resultadosBusca.style.display = 'none';
                 }
             });
+
         });
     </script>
 </body>
