@@ -27,7 +27,7 @@ try {
         SELECT id, data_inicio, status, posto_graduacao, nome_guerra 
         FROM agendamentos 
         WHERE cpf = ? AND status != 'cancelado'
-        ORDER BY created_at DESC 
+        ORDER BY data_inicio DESC 
         LIMIT 1
     ");
     

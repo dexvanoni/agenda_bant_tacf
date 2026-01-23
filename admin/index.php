@@ -141,11 +141,9 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <button type="button" class="btn btn-danger" id="btnLimparSistema">
                         <i class="fas fa-trash-alt"></i> Limpar Sistema
                     </button>
-                    <!--
                     <a href="configuracoes.php" class="btn btn-primary">
                         <i class="fas fa-cog"></i> Configurações
                     </a>
-                    -->
                 </div>
             </div>
         </div>

@@ -11,18 +11,16 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $conn->prepare("
         UPDATE configuracoes 
-        SET antecedencia_horas = ?,
-            max_horas_consecutivas = ?,
-            email_comunicacao = ?,
-            email_sindico_cine_navy = ?
+        SET email_comunicacao = ?,
+            dias_minimos_reagendamento = ?,
+            max_reagendamentos_6meses = ?
         WHERE id = ?
     ");
     
     $stmt->execute([
-        $_POST['antecedencia_horas'],
-        $_POST['max_horas_consecutivas'],
         $_POST['email_comunicacao'],
-        $_POST['email_sindico_cine_navy'],
+        $_POST['dias_minimos_reagendamento'],
+        $_POST['max_reagendamentos_6meses'],
         $_POST['id']
     ]);
     
@@ -85,38 +83,34 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                     <input type="hidden" name="id" value="<?php echo $config['id']; ?>">
                     
                     <div class="mb-3">
-                        <label class="form-label">Antecedência Mínima (horas)</label>
-                        <input type="number" class="form-control" name="antecedencia_horas" 
-                               value="<?php echo $config['antecedencia_horas']; ?>" required>
-                        <div class="form-text">
-                            Tempo mínimo de antecedência necessário para realizar um agendamento
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Máximo de Horas Consecutivas</label>
-                        <input type="number" class="form-control" name="max_horas_consecutivas" 
-                               value="<?php echo $config['max_horas_consecutivas']; ?>" required>
-                        <div class="form-text">
-                            Quantidade máxima de horas que podem ser agendadas em sequência
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Email da Comunicação Social</label>
+                        <label class="form-label">Email da SEF</label>
                         <input type="email" class="form-control" name="email_comunicacao" 
                                value="<?php echo $config['email_comunicacao']; ?>" required>
                         <div class="form-text">
-                            Email que receberá as notificações de novos agendamentos
+                            Email que receberá as notificações de novos agendamentos e reagendamentos
                         </div>
                     </div>
 
+                    <hr class="my-4">
+                    <h5 class="mb-3">Configurações de Reagendamento</h5>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Email do Síndico do Cine Navy</label>
-                        <input type="email" class="form-control" name="email_sindico_cine_navy" 
-                               value="<?php echo $config['email_sindico_cine_navy']; ?>" required>
+                        <label class="form-label">Dias Mínimos para Reagendamento</label>
+                        <input type="number" class="form-control" name="dias_minimos_reagendamento" 
+                               value="<?php echo isset($config['dias_minimos_reagendamento']) ? $config['dias_minimos_reagendamento'] : 3; ?>" 
+                               min="1" required>
                         <div class="form-text">
-                            Email que receberá as notificações de agendamentos do Auditório Cine Navy
+                            Número mínimo de dias antes da data do teste para permitir reagendamento. Exemplo: se configurado como 3, um teste agendado para dia 15 só poderá ser reagendado até o dia 12.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Máximo de Reagendamentos em 6 Meses</label>
+                        <input type="number" class="form-control" name="max_reagendamentos_6meses" 
+                               value="<?php echo isset($config['max_reagendamentos_6meses']) ? $config['max_reagendamentos_6meses'] : 1; ?>" 
+                               min="1" required>
+                        <div class="form-text">
+                            Número máximo de reagendamentos que um mesmo usuário pode realizar em um período de 6 meses.
                         </div>
                     </div>
                     
