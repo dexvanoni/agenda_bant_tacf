@@ -65,12 +65,14 @@ try {
     }
     
     // Verificar se está dentro do prazo mínimo para reagendamento
-    if ($diasRestantes < $diasMinimos) {
+    // Regra: o limite de dias mínimos só se aplica quando o agendamento já estiver APROVADO.
+    if ($agendamento['status'] === 'aprovado' && $diasRestantes < $diasMinimos) {
         echo json_encode([
             'success' => false,
-            'message' => "Não é possível reagendar. O reagendamento deve ser feito com pelo menos {$diasMinimos} dias de antecedência. Faltam apenas {$diasRestantes} dia(s) para o teste.",
+            'message' => "Não é possível reagendar. Para agendamentos já aprovados, o reagendamento deve ser feito com pelo menos {$diasMinimos} dia(s) de antecedência. Faltam apenas {$diasRestantes} dia(s) para o teste.",
             'dias_restantes' => $diasRestantes,
-            'dias_minimos' => $diasMinimos
+            'dias_minimos' => $diasMinimos,
+            'status_atual' => $agendamento['status']
         ]);
         exit();
     }

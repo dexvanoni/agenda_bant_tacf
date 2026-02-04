@@ -21,15 +21,6 @@ if (!$espaco) {
 $stmt = $conn->query("SELECT * FROM configuracoes LIMIT 1");
 $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Configurações de limites de reagendamento (com valores padrão de segurança)
-$dias_minimos_reagendamento = isset($config['dias_minimos_reagendamento'])
-    ? (int)$config['dias_minimos_reagendamento']
-    : 3;
-
-$max_reagendamentos_6meses = isset($config['max_reagendamentos_6meses'])
-    ? (int)$config['max_reagendamentos_6meses']
-    : 1;
-
 // Buscar configuração do aviso popup
 $stmt = $conn->query("SELECT * FROM aviso_popup WHERE ativo = 1 ORDER BY id DESC LIMIT 1");
 $aviso_popup = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -579,14 +570,6 @@ if (!$aviso_popup) {
                 transform: translateY(0);
             }
         }
-
-        #calendarioReagendamento {
-        height: 420px;
-        }
-
-        .fc {
-            height: 100% !important;
-        }
     </style>
 </head>
 <body>
@@ -606,11 +589,10 @@ if (!$aviso_popup) {
     </header>
 
     <!-- Conteúdo Principal -->
-    <main class="container-fluid px-3">
-        <div class="container-fluid">
+    <main class="container-fluid px-4">
         <div class="row g-4">
             <!-- Coluna do Calendário -->
-            <div class="col-md-5">
+            <div class="col-lg-8 col-xl-9">
                 <div class="calendario-container">
                     <h3 class="mb-4" style="color: var(--primary-color); font-weight: 700;">
                         <i class="fas fa-calendar-alt me-2"></i>Calendário de Agendamentos
@@ -620,7 +602,7 @@ if (!$aviso_popup) {
             </div>
             
             <!-- Coluna Lateral com Cards -->
-            <div class="col-md-4">
+            <div class="col-lg-4 col-xl-3">
                 <div class="sidebar-cards">
                     <!-- Card Informações Gerais -->
                     <div class="info-card">
@@ -631,16 +613,13 @@ if (!$aviso_popup) {
                             <ol class="mb-0" style="padding-left: 1.25rem;">
                                 <li class="mb-3">No dia de realização do TACF, cada militar deverá estar em posse da sua <strong>FICHA DE ANAMNESE PREENCHIDA</strong>. Sendo assim, é <strong>RESPONSABILIDADE DO MILITAR</strong> preencher a Ficha de Anamnese com, no mínimo, 10 (dez) dias de antecedência ao dia agendado para realizar o TACF.</li>
                                 <li class="mb-3">Ainda que o militar esteja impossibilitado de realizar o TACF por decisão da Junta de Saúde, ele deverá preencher a Ficha de Anamnese e de Avaliação do TACF e anexar o resultado da Junta e a cópia do boletim de publicação no SIGTACF. <strong class="text-danger">NESSE CASO, O MILITAR NÃO DEVE REALIZAR O AGENDAMENTO</strong>. No entanto, esse militar deve ir a SEF para entregar os documentos referentes a dispensa médica, bem como para assinar a lista de presença.</li>
-                                <li class="mb-3">A realização do 1º TACF / 2026 nesta unidade só será permitida, mediante agendamento prévio. Não será permitido, <strong>EM HIPÓTESE ALGUMA</strong>, a realização do 1º TACF / 2026 sem que o militar esteja agendado.</li>
+                                <li class="mb-3">A realização do 2º TACF / 2025 nesta unidade só será permitida, mediante agendamento prévio. Não será permitido, <strong>EM HIPÓTESE ALGUMA</strong>, a realização do 2º TACF / 2025 sem que o militar esteja agendado.</li>
                                 <li class="mb-3">Cada militar que estiver com seu agendamento confirmado, tem a responsabilidade de gerar sua indisponibilidade para escala de serviço no E-risaer. O documento para comprovar essa indisponibilidade, exigido pelo E-risaer, será a cópia do próprio Zimbra recebido com a confirmação do agendamento.</li>
                                 <li class="mb-0">Cada militar deve apresentar-se na SEF para realização do TACF, com o 9º uniforme completo (incluindo tênis branco). A troca do tênis, caso o militar deseje, só será permitida quando o militar for realizar a etapa da corrida.</li>
                             </ol>
                         </div>
                     </div>
-                </div>     
-            </div>
-
-               <div class="col-md-3">
+                    
                     <!-- Card REAGENDAMENTO -->
                     <div class="card reagendamento-card">
                         <div class="card-body">
@@ -650,23 +629,6 @@ if (!$aviso_popup) {
                             <p class="card-text text-muted mb-4" style="font-size: 0.95rem;">
                                 Busque seu agendamento e solicite um reagendamento caso necessário.
                             </p>
-                            
-                            <div class="alert alert-info py-2 px-3 mb-4" style="font-size: 0.85rem;">
-                                <div class="fw-semibold mb-1">
-                                    <i class="fas fa-info-circle me-1"></i>Limites para reagendamento:
-                                </div>
-                                <ul class="mb-0 ps-3">
-                                    <li>O reagendamento deve ser solicitado com, no mínimo, 
-                                        <strong><?php echo htmlspecialchars($dias_minimos_reagendamento, ENT_QUOTES, 'UTF-8'); ?></strong> 
-                                        dia(s) de antecedência da data do teste.
-                                    </li>
-                                    <li>
-                                        É permitido no máximo 
-                                        <strong><?php echo htmlspecialchars($max_reagendamentos_6meses, ENT_QUOTES, 'UTF-8'); ?></strong> 
-                                        reagendamento(s) em um período de 6 meses.
-                                    </li>
-                                </ul>
-                            </div>
                             
                             <form id="formBuscarReagendamento">
                                 <div class="mb-3">
@@ -718,7 +680,6 @@ if (!$aviso_popup) {
                     </div>
                 </div>
             </div>
-        </div>
         </div>
     </main>
 
@@ -1315,7 +1276,7 @@ if (!$aviso_popup) {
                 .then(data => {
                     if (data.success) {
                         // Abrir modal de seleção de data
-                        
+                        inicializarCalendarioReagendamento();
                         document.getElementById('motivoReagendamentoAutenticacao').value = motivo;
                         let modal = new bootstrap.Modal(document.getElementById('selecaoDataModal'));
                         modal.show();
@@ -1326,18 +1287,6 @@ if (!$aviso_popup) {
                 .catch(error => {
                     mostrarMensagemReagendamento('Erro ao validar reagendamento. Tente novamente.', 'danger');
                 });
-            });
-
-            const modalSelecaoData = document.getElementById('selecaoDataModal');
-
-            modalSelecaoData.addEventListener('shown.bs.modal', function () {
-
-                if (!calendarioReagendamento) {
-                    inicializarCalendarioReagendamento();
-                } else {
-                    calendarioReagendamento.updateSize();
-                }
-
             });
             
             // Inicializar calendário para seleção de nova data
@@ -1403,8 +1352,8 @@ if (!$aviso_popup) {
                             '<div class="alert alert-success">Data disponível! Clique em "Confirmar Data" para continuar.</div>';
                     }
                 });
-                calendarioReagendamento.render();
                 
+                calendarioReagendamento.render();
             }
             
             // Confirmar data selecionada e abrir modal de autenticação

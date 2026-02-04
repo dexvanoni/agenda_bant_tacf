@@ -71,21 +71,8 @@ try {
         exit();
     }
     
-    // Verificar se está dentro do prazo mínimo para reagendamento
+    // Dias restantes até o teste (usado apenas para informação e regras posteriores)
     $diasRestantes = (int)$agendamento['dias_restantes'];
-    
-    if ($diasRestantes < $diasMinimos) {
-        echo json_encode([
-            'success' => false,
-            'message' => "Não é possível reagendar. O reagendamento deve ser feito com pelo menos {$diasMinimos} dias de antecedência. Faltam apenas {$diasRestantes} dia(s) para o teste.",
-            'agendamento' => [
-                'id' => $agendamento['id'],
-                'data_teste' => date('d/m/Y', strtotime($agendamento['data_teste'])),
-                'dias_restantes' => $diasRestantes
-            ]
-        ]);
-        exit();
-    }
     
     // Verificar quantidade de reagendamentos nos últimos 6 meses
     $stmt = $conn->prepare("
