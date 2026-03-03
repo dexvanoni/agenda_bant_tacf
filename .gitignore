@@ -1,5 +1,3 @@
-vendor/
-config/email.php
 .env
 .DS_Store
 Thumbs.db
